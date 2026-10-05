@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | **Séance de référence** | Séance 5 — Consommation d'API REST |
-| **Durée** | 3h encadrées, finalisation en autonomie |
+| **Durée** | 1h45 en autonomie |
 | **Modalité** | Individuel |
 | **Prérequis** | Séances 1 à 4 : projet Flutter fonctionnel, composition de widgets, navigation, notions d'état (`setState`, `ChangeNotifier`) |
 | **Environnement** | Flutter stable 3.47.2 / Dart 3.13.2 (ou version locale ; vérifier avec `flutter --version`), VSCode |
