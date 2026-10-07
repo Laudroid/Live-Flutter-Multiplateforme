@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore pour la collection `events` (Partie C.3).
+//
+// Déployable tel quel : `firebase deploy --only firestore:rules` depuis la
+// racine de ce projet, après avoir lié le projet Firebase concerné via
+// `firebase use --add` ou après `flutterfire configure` (qui associe déjà
+// l'app à un projet). Ces règles peuvent aussi être collées directement
+// dans la console Firebase, onglet Firestore Database > Règles.
+//
+// Principe : aucune vérification client ne remplace ces règles (voir
+// NOTE-SECURITE.md). Le serveur Firestore les évalue sur CHAQUE requête,
+// quelle que soit l'origine (application mobile officielle, navigateur,
+// appel direct à l'API REST avec un jeton volé...).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+      // Lecture : uniquement authentifié, et uniquement ses propres
+      // événements. `resource.data.ownerId` désigne le document déjà
+      // existant qu'on tente de lire.
+      allow read: if request.auth != null
+                   && request.auth.uid == resource.data.ownerId;
+
+      // Création : uniquement authentifié, et seulement si le document que
+      // le client tente de créer porte SON PROPRE uid comme ownerId. Sans
+      // cette vérification sur `request.resource.data`, n'importe quel
+      // utilisateur authentifié pourrait créer un événement au nom d'un
+      // autre organisateur.
+      allow create: if request.auth != null
+                     && request.auth.uid == request.resource.data.ownerId;
+
+      // Mise à jour et suppression : uniquement authentifié, uniquement
+      // propriétaire du document existant, ET le document ne doit pas se
+      // faire réattribuer à un autre propriétaire au passage (on relit
+      // resource.data.ownerId, pas request.resource.data.ownerId, pour la
+      // condition de propriété, mais on interdit explicitement le
+      // changement d'ownerId lors d'une mise à jour).
+      allow update: if request.auth != null
+                     && request.auth.uid == resource.data.ownerId
+                     && request.resource.data.ownerId == resource.data.ownerId;
+
+      allow delete: if request.auth != null
+                     && request.auth.uid == resource.data.ownerId;
+    }
+
+    // Tout le reste de la base est fermé par défaut (comportement natif de
+    // Firestore : en l'absence de règle correspondante, l'accès est
+    // refusé). On le rend explicite ici pour éviter toute ambiguïté avec
+    // un futur ajout de collection qui oublierait ses propres règles.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
